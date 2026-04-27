@@ -1,0 +1,1312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SAG Adjuster">
+<title>SAG Field Adjuster</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f5;color:#1a1a1a;min-height:100vh;-webkit-font-smoothing:antialiased}
+.app{max-width:480px;margin:0 auto;background:#fff;min-height:100vh;display:flex;flex-direction:column}
+.header{background:#1a3a5c;color:#fff;padding:14px 16px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100}
+.header-back{background:rgba(255,255,255,0.15);border:none;color:#fff;width:32px;height:32px;border-radius:50%;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.header h1{font-size:16px;font-weight:600;flex:1}
+.header-step{font-size:12px;opacity:0.7;white-space:nowrap}
+.progress{height:3px;background:#e0e0e0}
+.progress-bar{height:3px;background:#2980b9;transition:width 0.3s}
+.content{flex:1;padding:16px;overflow-y:auto;padding-bottom:40px}
+.instr-banner{background:#e8f4fd;border:1px solid #b3d9f7;border-radius:8px;padding:12px;margin-bottom:16px;font-size:13px;color:#1a3a5c;line-height:1.5}
+.instr-banner strong{display:block;margin-bottom:4px;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#2980b9}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:#f8f8f8;border-bottom:1px solid #e0e0e0;font-size:13px;color:#555}
+.toggle{position:relative;width:36px;height:20px;display:inline-block;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;inset:0;background:#ccc;border-radius:20px;cursor:pointer;transition:0.3s}
+.toggle-slider:before{content:'';position:absolute;width:16px;height:16px;left:2px;top:2px;background:#fff;border-radius:50%;transition:0.3s}
+input:checked+.toggle-slider{background:#2980b9}
+input:checked+.toggle-slider:before{transform:translateX(16px)}
+.sec-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:#888;margin:20px 0 10px}
+.fg{margin-bottom:14px}
+.fl{font-size:13px;font-weight:500;color:#333;margin-bottom:5px;display:block}
+.fl .req{color:#e74c3c;margin-left:2px}
+.fi{width:100%;padding:10px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;background:#fafafa;color:#1a1a1a;outline:none;transition:border 0.2s}
+.fi:focus{border-color:#2980b9;background:#fff}
+.fsel{width:100%;padding:10px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;background:#fafafa;color:#1a1a1a;outline:none;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23666' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+.btn{width:100%;padding:13px;border-radius:10px;border:none;font-size:15px;font-weight:600;cursor:pointer;margin-top:8px;transition:opacity 0.2s,transform 0.1s;min-height:44px}
+.btn:active{transform:scale(0.98)}
+.btn-primary{background:#1a3a5c;color:#fff}
+.btn-secondary{background:#f0f4f8;color:#1a3a5c;border:1px solid #c5d5e8}
+.btn-danger{background:#fdecea;color:#c0392b;border:1px solid #f5c6c6}
+.photo-zone{border:1.5px dashed #2980b9;border-radius:10px;padding:12px;margin-top:8px;background:#f8fbff}
+.photo-zone-label{font-size:13px;font-weight:600;color:#1a3a5c;margin-bottom:8px;display:block}
+.photo-btn{display:flex;align-items:center;justify-content:center;gap:8px;background:#2980b9;color:#fff;border:none;border-radius:8px;padding:10px 14px;font-size:13px;font-weight:600;cursor:pointer;width:100%;min-height:44px;margin-bottom:6px}
+.photo-btn.secondary{background:#fff;color:#2980b9;border:1.5px solid #2980b9}
+.photo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px}
+.photo-thumb{position:relative;aspect-ratio:1;border-radius:6px;overflow:hidden;border:1px solid #e0e0e0}
+.photo-thumb img{width:100%;height:100%;object-fit:cover}
+.photo-thumb .del-photo{position:absolute;top:3px;right:3px;background:rgba(0,0,0,0.6);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.photo-count{font-size:12px;color:#27ae60;font-weight:500;margin-top:4px}
+.col-list{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}
+.col-btn{padding:12px 8px;border:1.5px solid #ddd;border-radius:8px;background:#fff;font-size:13px;font-weight:500;cursor:pointer;text-align:center;transition:all 0.2s;color:#333;min-height:44px}
+.col-btn.selected{border-color:#1a3a5c;background:#e8f0f8;color:#1a3a5c}
+.col-btn.col-full{grid-column:1/-1}
+.dmg-toggle{display:flex;gap:8px;margin-top:4px}
+.dmg-btn{flex:1;padding:10px;border-radius:8px;border:1.5px solid #ddd;background:#fff;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.2s;min-height:44px}
+.dmg-btn.yes{border-color:#e74c3c;background:#fdf0ee;color:#c0392b}
+.dmg-btn.no{border-color:#27ae60;background:#eaf8f0;color:#1e8449}
+.chk-item{display:flex;align-items:center;gap:10px;padding:12px;border:1px solid #e8e8e8;border-radius:8px;margin-bottom:8px;background:#fafafa;flex-wrap:wrap}
+.chk-item input[type=checkbox]{width:20px;height:20px;cursor:pointer;accent-color:#1a3a5c;flex-shrink:0}
+.chk-item label{flex:1;font-size:14px;color:#333}
+.chk-item .cam-btn{background:#2980b9;border:none;color:#fff;padding:8px 12px;border-radius:6px;font-size:12px;cursor:pointer;white-space:nowrap;min-height:36px}
+.chk-item .cam-btn.done{background:#27ae60}
+.chk-photos{width:100%;margin-top:8px;padding-left:30px}
+.step-card{background:#fff;border:1px solid #e0e8f0;border-radius:12px;padding:16px;margin-bottom:12px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;min-height:60px}
+.step-card h3{font-size:15px;font-weight:600;color:#1a3a5c;margin-bottom:2px}
+.step-card p{font-size:12px;color:#888}
+.step-card .arrow{color:#2980b9;font-size:20px;flex-shrink:0}
+.step-card.completed{border-color:#27ae60;background:#f0faf5}
+.elev-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.elev-card{border:1.5px solid #ddd;border-radius:10px;padding:14px 10px;text-align:center;cursor:pointer;background:#fff;transition:all 0.2s;min-height:80px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.elev-card.done{border-color:#27ae60;background:#eaf8f0}
+.elev-card .dir{font-size:24px;font-weight:700;color:#1a3a5c;margin-bottom:4px}
+.elev-card .lbl{font-size:12px;color:#888}
+.roof-sec{border:1px solid #e0e8f0;border-radius:10px;margin-bottom:10px;overflow:hidden}
+.roof-sec-hdr{background:#f0f4f8;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;min-height:48px}
+.roof-sec-hdr h4{font-size:14px;font-weight:600;color:#1a3a5c}
+.roof-sec-body{padding:12px 14px;display:none}
+.roof-sec-body.open{display:block}
+.sub-sec{background:#f8f9fa;border-radius:8px;padding:12px;margin-bottom:10px}
+.sub-sec h5{font-size:11px;font-weight:600;text-transform:uppercase;color:#666;margin-bottom:8px;letter-spacing:0.5px}
+.divider{height:1px;background:#f0f0f0;margin:16px 0}
+.sum-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f5f5f5;font-size:14px}
+.sum-row .lbl{color:#666}
+.sum-row .val{font-weight:500;color:#1a1a1a;text-align:right;max-width:60%}
+.alert{padding:12px;border-radius:8px;font-size:13px;margin-bottom:12px;line-height:1.5}
+.alert-warn{background:#fef9e7;border:1px solid #f9ca24;color:#7d6608}
+.alert-info{background:#e8f4fd;border:1px solid #b3d9f7;color:#1a3a5c}
+.alert-success{background:#eaf8f0;border:1px solid #a9dfbf;color:#1e8449}
+.radio-opt{display:flex;align-items:center;gap:10px;padding:12px;border:1.5px solid #ddd;border-radius:8px;cursor:pointer;font-size:14px;transition:all 0.2s;margin-bottom:6px;min-height:44px}
+.radio-opt.selected{border-color:#1a3a5c;background:#e8f0f8}
+.nfip-box{background:#f0f4f8;border-radius:8px;padding:12px;margin-top:10px}
+.feedback-ta{width:100%;min-height:100px;padding:10px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;font-family:inherit;resize:vertical;background:#fafafa}
+.splash{text-align:center;padding:40px 20px}
+.splash .logo{width:80px;height:80px;background:#1a3a5c;border-radius:20px;margin:0 auto 20px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:30px;font-weight:700}
+.cause-item{padding:13px 14px;border:1.5px solid #ddd;border-radius:10px;background:#fff;cursor:pointer;transition:all 0.2s;margin-bottom:8px;min-height:56px}
+.cause-item.selected{border-color:#1a3a5c;background:#e8f0f8}
+.cause-item h4{font-size:14px;font-weight:600;color:#1a3a5c}
+.cause-item p{font-size:12px;color:#888;margin-top:2px}
+.inline-sel{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.inline-opt{padding:8px 12px;border:1.5px solid #ddd;border-radius:20px;font-size:13px;cursor:pointer;background:#fff;transition:all 0.2s;color:#333;min-height:36px}
+.inline-opt.selected{border-color:#1a3a5c;background:#1a3a5c;color:#fff}
+.screen{display:none}
+.screen.active{display:flex;flex-direction:column;min-height:100vh}
+.room-item{display:flex;align-items:center;justify-content:space-between;padding:12px;border:1px solid #e8e8e8;border-radius:8px;margin-bottom:6px;background:#fafafa;cursor:pointer;min-height:52px}
+.room-item h5{font-size:14px;font-weight:500;color:#333}
+.room-item .status{font-size:12px;color:#aaa}
+.room-item.has-dmg .status{color:#e74c3c}
+.room-item.no-dmg .status{color:#27ae60}
+.mat-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px}
+.mat-btn{padding:10px 8px;border:1.5px solid #ddd;border-radius:8px;background:#fff;font-size:12px;font-weight:500;cursor:pointer;text-align:center;transition:all 0.2s;color:#333;min-height:40px}
+.mat-btn.selected{border-color:#1a3a5c;background:#e8f0f8;color:#1a3a5c}
+.lien-card{background:#f0f4f8;border-radius:8px;padding:12px;margin-top:8px}
+.lien-card h5{font-size:11px;font-weight:600;text-transform:uppercase;color:#2980b9;margin-bottom:8px;letter-spacing:0.5px}
+.add-btn{display:flex;align-items:center;gap:6px;color:#2980b9;font-size:13px;font-weight:500;background:none;border:none;cursor:pointer;padding:8px 0;margin-top:4px;min-height:44px}
+.saved-badge{background:#d5f5e3;color:#1e8449;font-size:11px;padding:3px 8px;border-radius:20px;font-weight:600;margin-left:8px}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:200;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.modal-overlay.open{display:block}
+.modal-inner{background:#fff;margin:16px;border-radius:14px;overflow:hidden;margin-bottom:40px}
+.save-indicator{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#27ae60;color:#fff;padding:8px 20px;border-radius:20px;font-size:13px;font-weight:600;z-index:300;opacity:0;transition:opacity 0.3s;pointer-events:none}
+.claims-list .claim-row{padding:14px;border:1px solid #e0e8f0;border-radius:10px;margin-bottom:8px;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+.claims-list .claim-row h4{font-size:14px;font-weight:600;color:#1a3a5c}
+.claims-list .claim-row p{font-size:12px;color:#888;margin-top:2px}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+<div class="save-indicator" id="saveInd">Saved ✓</div>
+
+<!-- TOGGLE -->
+<div class="toggle-row" id="toggleBar" style="display:none">
+  <span>Show instructions & guidance</span>
+  <label class="toggle"><input type="checkbox" id="instrToggle" checked onchange="toggleInstr()"><span class="toggle-slider"></span></label>
+</div>
+
+<!-- SPLASH -->
+<div class="screen active" id="s-splash">
+  <div class="header"><h1>SAG Field Adjuster</h1></div>
+  <div class="content">
+    <div class="splash">
+      <div class="logo">SAG</div>
+      <h2 style="font-size:22px;font-weight:700;color:#1a3a5c;margin-bottom:8px">Field Inspection App</h2>
+      <p style="font-size:14px;color:#666;line-height:1.6;margin-bottom:24px">Guided workflow for property & casualty field adjusters. All data is saved automatically to your device.</p>
+      <button class="btn btn-primary" onclick="newClaim()">+ Start New Inspection</button>
+      <button class="btn btn-secondary" style="margin-top:10px" onclick="goTo('s-claims')">Load Saved Claim</button>
+    </div>
+  </div>
+</div>
+
+<!-- SAVED CLAIMS -->
+<div class="screen" id="s-claims">
+  <div class="header"><button class="header-back" onclick="goTo('s-splash')">&#8592;</button><h1>Saved Claims</h1></div>
+  <div class="content">
+    <div id="claimsList" class="claims-list"></div>
+    <button class="btn btn-primary" style="margin-top:12px" onclick="newClaim()">+ New Inspection</button>
+  </div>
+</div>
+
+<!-- STEP 1 -->
+<div class="screen" id="s-step1">
+  <div class="header"><button class="header-back" onclick="goTo('s-splash')">&#8592;</button><h1>Step 1 — Claim Intake</h1><span class="header-step">1/9</span></div>
+  <div class="progress"><div class="progress-bar" style="width:11%"></div></div>
+  <div class="content">
+    <div class="instr-banner instr">
+      <strong>Instructions</strong>
+      Capture all claim and insured information. Verify the address against the FNOL documentation before proceeding to the field.
+    </div>
+    <div class="sec-title">Claim Information</div>
+    <div class="fg"><label class="fl">Claim Number <span class="req">*</span></label><input class="fi" id="f-claimNum" placeholder="CLM-2024-000000" oninput="autoSave()"></div>
+    <div class="fg"><label class="fl">Carrier Name <span class="req">*</span></label><input class="fi" id="f-carrier" placeholder="Carrier name" oninput="autoSave()"></div>
+    <div class="fg"><label class="fl">Date of Loss <span class="req">*</span></label><input class="fi" type="date" id="f-dol" oninput="autoSave()"></div>
+
+    <div class="sec-title">Adjuster Information</div>
+    <div class="fg"><label class="fl">Adjuster Name <span class="req">*</span></label><input class="fi" id="f-adjName" placeholder="Full name" oninput="autoSave()"></div>
+    <div class="fg">
+      <label class="fl">Adjuster License Number</label>
+      <div style="display:flex;gap:8px">
+        <input class="fi" id="f-adjLic" placeholder="License number" style="flex:1" oninput="autoSave()">
+        <button class="btn btn-secondary" style="width:auto;padding:10px 10px;margin-top:0;font-size:12px;white-space:nowrap" onclick="alert('License override applied — state does not require adjuster license.');document.getElementById('f-adjLic').value='N/A — No License Required';autoSave()">No License State</button>
+      </div>
+    </div>
+    <div class="fg"><label class="fl">Inspection State</label>
+      <select class="fsel" id="f-adjState" onchange="autoSave()">
+        <option>Texas</option><option>Florida</option><option>Louisiana</option><option>Oklahoma</option><option>Kansas</option><option>Missouri</option><option>Colorado</option><option>Georgia</option><option>North Carolina</option><option>South Carolina</option><option>Alabama</option><option>Mississippi</option><option>Tennessee</option><option>Arkansas</option><option>Other</option>
+      </select>
+    </div>
+
+    <div class="sec-title">Insured Information</div>
+    <div class="fg"><label class="fl">Insured Name <span class="req">*</span></label><input class="fi" id="f-insName" placeholder="Full name" oninput="autoSave()"></div>
+    <div class="fg"><label class="fl">Loss Address <span class="req">*</span></label><input class="fi" id="f-addr" placeholder="Street address" oninput="autoSave()"></div>
+    <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px">
+      <input class="fi" id="f-city" placeholder="City" oninput="autoSave()">
+      <input class="fi" id="f-state" placeholder="State" oninput="autoSave()">
+      <input class="fi" id="f-zip" placeholder="ZIP" oninput="autoSave()">
+    </div>
+    <div class="fg" style="margin-top:12px"><label class="fl">Insured Phone</label><input class="fi" id="f-phone" type="tel" placeholder="(000) 000-0000" oninput="autoSave()"></div>
+    <div class="fg"><label class="fl">Insured Email</label><input class="fi" id="f-email" type="email" placeholder="email@address.com" oninput="autoSave()"></div>
+
+    <div class="sec-title">Mortgage / Lien Holders</div>
+    <div class="instr-banner instr"><strong>Instructions</strong>Check FNOL for any mortgage or lien information. All lienholders must be documented. Photograph the mortgage statement.</div>
+    <div id="lienList">
+      <div class="lien-card">
+        <h5>Primary Mortgage</h5>
+        <div class="fg"><label class="fl">Lienholder Name</label><input class="fi" id="f-lien1name" placeholder="Bank or lender name" oninput="autoSave()"></div>
+        <div class="fg"><label class="fl">Loan Number</label><input class="fi" id="f-lien1loan" placeholder="Loan number" oninput="autoSave()"></div>
+        <div class="photo-zone"><span class="photo-zone-label">Mortgage / Lien Document</span>
+          <button class="photo-btn" onclick="takePhoto('lien1','Mortgage Document')">📷 Take Photo</button>
+          <button class="photo-btn secondary" onclick="uploadPhoto('lien1','Mortgage Document')">🖼 Upload from Library</button>
+          <div class="photo-grid" id="photos-lien1"></div>
+        </div>
+      </div>
+    </div>
+    <button class="add-btn" onclick="addLien()">+ Add Additional Lienholder</button>
+
+    <div class="sec-title">Prior Loss</div>
+    <div class="fg"><label class="fl">Prior loss reported?</label>
+      <div class="dmg-toggle">
+        <button class="dmg-btn" id="btn-priorY" onclick="toggle2('prior',true)">Yes</button>
+        <button class="dmg-btn no" id="btn-priorN" onclick="toggle2('prior',false)">No</button>
+      </div>
+    </div>
+    <div id="sec-prior" style="display:none">
+      <div class="alert alert-warn">Obtain receipts or documentation verifying prior repairs were completed before current date of loss.</div>
+      <div class="fg"><label class="fl">Prior Loss Description</label><input class="fi" id="f-priorDesc" placeholder="Describe prior loss" oninput="autoSave()"></div>
+      <div class="photo-zone"><span class="photo-zone-label">Prior Loss Documentation</span>
+        <button class="photo-btn" onclick="takePhoto('priorDocs','Prior Loss Documents')">📷 Take Photo</button>
+        <button class="photo-btn secondary" onclick="uploadPhoto('priorDocs','Prior Loss Documents')">🖼 Upload from Library</button>
+        <div class="photo-grid" id="photos-priorDocs"></div>
+      </div>
+    </div>
+
+    <div class="sec-title">Other Insurance</div>
+    <div class="fg"><label class="fl">Other insurance in force?</label>
+      <div class="dmg-toggle">
+        <button class="dmg-btn" id="btn-otherInsY" onclick="toggle2('otherIns',true)">Yes</button>
+        <button class="dmg-btn no" id="btn-otherInsN" onclick="toggle2('otherIns',false)">No</button>
+      </div>
+    </div>
+    <div id="sec-otherIns" style="display:none">
+      <div class="fg"><label class="fl">Other Carrier</label><input class="fi" id="f-otherCarrier" placeholder="Carrier name" oninput="autoSave()"></div>
+      <div class="fg"><label class="fl">Other Claim #</label><input class="fi" id="f-otherClaim" placeholder="Claim number" oninput="autoSave()"></div>
+    </div>
+
+    <div class="sec-title">Temporary Repairs</div>
+    <div class="fg"><label class="fl">Temporary repairs completed?</label>
+      <div class="dmg-toggle">
+        <button class="dmg-btn" id="btn-tempY" onclick="toggle2('temp',true)">Yes</button>
+        <button class="dmg-btn no" id="btn-tempN" onclick="toggle2('temp',false)">No</button>
+      </div>
+    </div>
+    <div id="sec-temp" style="display:none">
+      <div class="photo-zone"><span class="photo-zone-label">Repair Receipt or Invoice</span>
+        <button class="photo-btn" onclick="takePhoto('tempReceipt','Temp Repair Receipt')">📷 Take Photo</button>
+        <button class="photo-btn secondary" onclick="uploadPhoto('tempReceipt','Temp Repair Receipt')">🖼 Upload from Library</button>
+        <div class="photo-grid" id="photos-tempReceipt"></div>
+      </div>
+    </div>
+
+    <div class="sec-title">Signed Contracts / Competing Estimates</div>
+    <div class="fg"><label class="fl">Signed contract or competing estimate present?</label>
+      <div class="dmg-toggle">
+        <button class="dmg-btn" id="btn-contY" onclick="toggle2('cont',true)">Yes</button>
+        <button class="dmg-btn no" id="btn-contN" onclick="toggle2('cont',false)">No</button>
+      </div>
+    </div>
+    <div id="sec-cont" style="display:none">
+      <div class="alert alert-warn">Document the estimate. If coverage issues exist, contact desk adjuster immediately and obtain Non-Waiver Agreement signature.</div>
+      <div class="photo-zone"><span class="photo-zone-label">Contract or Estimate</span>
+        <button class="photo-btn" onclick="takePhoto('contract','Contract or Estimate')">📷 Take Photo</button>
+        <button class="photo-btn secondary" onclick="uploadPhoto('contract','Contract or Estimate')">🖼 Upload from Library</button>
+        <div class="photo-grid" id="photos-contract"></div>
+      </div>
+      <div class="fg" style="margin-top:10px"><label class="fl">Coverage issues identified?</label>
+        <div class="dmg-toggle">
+          <button class="dmg-btn yes" onclick="alert('Contact desk adjuster now. Document Non-Waiver Agreement and obtain insured signature.')">Yes — Call Desk Adjuster</button>
+          <button class="dmg-btn no">No</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec-title">Age Verification for Depreciation</div>
+    <div class="fg"><label class="fl">Year home was built</label><input class="fi" id="f-yearBuilt" type="number" placeholder="e.g. 1987" oninput="autoSave()"></div>
+    <div class="fg"><label class="fl">Roof last replaced (year)</label><input class="fi" id="f-roofYear" type="number" placeholder="e.g. 2011" oninput="autoSave()"></div>
+
+    <div class="divider"></div>
+    <button class="btn btn-primary" onclick="goTo('s-arrival')">Continue to Arrival & Address Verification →</button>
+  </div>
+</div>
+
+<!-- ARRIVAL -->
+<div class="screen" id="s-arrival">
+  <div class="header"><button class="header-back" onclick="goTo('s-step1')">&#8592;</button><h1>Arrival & Address Verification</h1><span class="header-step">1/9</span></div>
+  <div class="progress"><div class="progress-bar" style="width:18%"></div></div>
+  <div class="content">
+    <div class="instr-banner instr"><strong>Instructions</strong>Upon arrival verify the physical address matches the FNOL. Capture address from mailbox or front elevation. Location is automatically geo-stamped.</div>
+    <div class="alert alert-info" id="geoStamp">📍 Tap to capture geo-location & timestamp</div>
+    <button class="btn btn-secondary" style="margin-top:0" onclick="captureGeo()">📍 Capture Location</button>
+    <div class="sec-title">Address Confirmation</div>
+    <div class="fg"><label class="fl">FNOL Address</label><input class="fi" id="f-fnolAddr" placeholder="Address from FNOL" oninput="autoSave()"></div>
+    <div class="fg"><label class="fl">Address confirmed at scene?</label>
+      <div class="dmg-toggle">
+        <button class="dmg-btn no">Yes — Confirmed</button>
+        <button class="dmg-btn yes" onclick="alert('Address mismatch — contact desk adjuster before proceeding.')">No — Mismatch</button>
+      </div>
+    </div>
+    <div class="photo-zone"><span class="photo-zone-label">Physical Address — Mailbox or Front Elevation</span>
+      <button class="photo-btn" onclick="takePhoto('address','Property Address')">📷 Take Photo</button>
+      <button class="photo-btn secondary" onclick="uploadPhoto('address','Property Address')">🖼 Upload from Library</button>
+      <div class="photo-grid" id="photos-address"></div>
+    </div>
+    <div class="sec-title">Insured Contact at Scene</div>
+    <div class="fg"><label class="fl">Insured present?</label>
+      <div class="dmg-toggle">
+        <button class="dmg-btn no">Yes</button>
+        <button class="dmg-btn">No — Unoccupied</button>
+      </div>
+    </div>
+    <div class="photo-zone"><span class="photo-zone-label">Business Card or Contact Info</span>
+      <button class="photo-btn" onclick="takePhoto('bizCard','Business Card')">📷 Take Photo</button>
+      <button class="photo-btn secondary" onclick="uploadPhoto('bizCard','Business Card')">🖼 Upload from Library</button>
+      <div class="photo-grid" id="photos-bizCard"></div>
+    </div>
+    <div class="divider"></div>
+    <button class="btn btn-primary" onclick="goTo('s-col')">Continue to Cause of Loss →</button>
+  </div>
+</div>
+
+<!-- COL -->
+<div class="screen" id="s-col">
+  <div class="header"><button class="header-back" onclick="goTo('s-arrival')">&#8592;</button><h1>Cause of Loss</h1><span class="header-step">2/9</span></div>
+  <div class="progress"><div class="progress-bar" style="width:22%"></div></div>
+  <div class="content">
+    <div class="instr-banner instr"><strong>Instructions</strong>Select the cause of loss from the FNOL. This drives the entire inspection workflow. Wind/Hail is fully active in this version.</div>
+    <div class="sec-title">Select Cause of Loss</div>
+    <div class="cause-item" id="col-windHail" onclick="selectCOL('windHail',this)"><h4>Wind / Hail</h4><p>Storm damage including wind, hail, or combined</p></div>
+    <div class="cause-item" onclick="colSoon('Wind — Storm or Hurricane',this)"><h4>Wind — Storm or Hurricane</h4><p>High wind event or named storm</p></div>
+    <div class="cause-item" onclick="colSoon('Water Non-Weather',this)"><h4>Water Non-Weather</h4><p>Pipe break or water leak</p></div>
+    <div class="cause-item" onclick="colSoon('Fire with Flame',this)"><h4>Fire — With Flame</h4><p>Structural fire with active flame damage</p></div>
+    <div class="cause-item" onclick="colSoon('Smoke / No Flame',this)"><h4>Smoke — No Flame</h4><p>Smoke damage without active flame</p></div>
+    <div class="cause-item" onclick="colSoon('Lightning',this)"><h4>Lightning</h4><p>Direct lightning strike damage</p></div>
+    <div class="cause-item" onclick="colSoon('Vandalism',this)"><h4>Vandalism</h4><p>Intentional property damage</p></div>
+    <div class="cause-item" onclick="colSoon('Theft',this)"><h4>Theft</h4><p>Stolen property or break-in</p></div>
+    <div class="cause-item" onclick="colSoon('Overflow',this)"><h4>Overflow</h4><p>AC drain, floor drain, toilet, or sink</p></div>
+    <div class="cause-item" onclick="colSoon('Sewer Backup',this)"><h4>Sewer Backup</h4><p>Sewage backing up from outside building</p></div>
+    <div class="cause-item" id="col-flood" onclick="toggleFlood(this)"><h4>Flood</h4><p>Surface water or rising water event</p></div>
+    <div id="floodOpts" style="display:none" class="nfip-box">
+      <div class="fg"><label class="fl">Flood Policy Type</label>
+        <div class="radio-opt" onclick="selectFloodType('private',this)"><input type="radio" name="ft"> Private Flood Insurance</div>
+        <div class="radio-opt" onclick="selectFloodType('nfip',this)"><input type="radio" name="ft"> NFIP</div>
+      </div>
+      <div id="nfipSec" style="display:none">
+        <div class="fg"><label class="fl">NFIP License Type</label>
+          <select class="fsel" onchange="autoSave()"><option>Select...</option><option>RCBAP</option><option>Large Commercial</option><option>Commercial</option><option>Dwelling</option><option>Mobile Home</option></select>
+        </div>
+        <div class="photo-zone"><span class="photo-zone-label">NFIP Adjuster License</span>
+          <button class="photo-btn" onclick="takePhoto('nfipLic','NFIP License')">📷 Take Photo</button>
+          <button class="photo-btn secondary" onclick="uploadPhoto('nfipLic','NFIP License')">🖼 Upload from Library</button>
+          <div class="photo-grid" id="photos-nfipLic"></div>
+        </div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <button class="btn btn-primary" id="colNext" style="display:none" onclick="goTo('s-property')">Continue to Property Information →</button>
+  </div>
+</div>
+
+<!-- PROPERTY -->
+<div class="screen" id="s-property">
+  <div class="header"><button class="header-back" onclick="goTo('s-col')">&#8592;</button><h1>Step 3 — Property Info</h1><span class="header-step">3/9</span></div>
+  <div class="progress"><div class="progress-bar" style="width:33%"></div></div>
+  <div class="content">
+    <div class="instr-banner instr"><strong>Instructions</strong>Document property characteristics. Number of stories determines roof inspection levels required in Step 4.</div>
+    <div class="sec-title">Property Type</div>
+    <div class="col-list" id="propTypeList">
+      <button class="col-btn" onclick="pickOne(this,'propTypeList')">Single Family</button>
+      <button class="col-btn" onclick="pickOne(this,'propTypeList')">Condo</button>
+      <button class="col-btn" onclick="pickOne(this,'propTypeList')">Townhome</button>
+      <button class="col-btn" onclick="pickOne(this,'propTypeList')">Mobile Home</button>
+      <button class="col-btn col-full" onclick="pickOne(this,'propTypeList')">Commercial</button>
+    </div>
+    <div class="sec-title">Number of Stories</div>
+    <div class="col-list" id="storiesList">
+      <button class="col-btn" onclick="pickStories(this,'1')">1 Story</button>
+      <button class="col-btn" onclick="pickStories(this,'1.5')">1.5 Story</button>
+      <button class="col-btn" onclick="pickStories(this,'2')">2 Story</button>
+      <button class="col-btn" onclick="pickStories(this,'3')">3 Story</button>
+    </div>
+    <div id="storyNote" style="display:none;margin-top:10px" class="alert alert-info"></div>
+    <div class="sec-title">Construction Type</div>
+    <div class="col-list">
+      <button class="col-btn" onclick="this.classList.toggle('selected')">Frame</button>
+      <button class="col-btn" onclick="this.classList.toggle('selected')">Masonry</button>
+      <button class="col-btn" onclick="this.classList.toggle('selected')">Brick Veneer</button>
+      <button class="col-btn" onclick="this.classList.toggle('selected')">Log</button>
+    </div>
+    <div class="sec-title">Roof Type</div>
+    <div class="col-list">
+      <button class="col-btn" onclick="this.classList.toggle('selected')">Gable</button>
+      <button class="col-btn" onclick="this.classList.toggle('selected')">Hip</button>
+      <button class="col-btn" onclick="this.classList.toggle('selected')">Flat</button>
+      <button class="col-btn" onclick="this.classList.toggle('selected')">Mansard</button>
+      <button class="col-btn col-full" onclick="this.classList.toggle('selected')">Complex / Multiple</button>
+    </div>
+    <div class="sec-title">Exterior Finish</div>
+    <div class="col-list">
+      <button class="col-btn" onclick="this.classList.toggle('selected')">Vinyl Siding</button>
+      <button class="col-btn" onclick="this.classList.toggle('selected')">Hardie Board</button>
+      <button class="col-btn" onclick="this.classList.toggle('selected')">Brick</button>
+      <button class="col-btn" onclick="this.classList.toggle('selected')">Stucco</button>
+      <button class="col-btn" onclick="this.classList.toggle('selected')">Wood</button>
+      <button class="col-btn" onclick="this.classList.toggle('selected')">EIFS</button>
+    </div>
+    <div class="sec-title">Other Structures Present</div>
+    <div class="col-list">
+      <button class="col-btn" onclick="this.classList.toggle('selected')">Detached Garage</button>
+      <button class="col-btn" onclick="this.classList.toggle('selected')">Fence</button>
+      <button class="col-btn" onclick="this.classList.toggle('selected')">Pool House</button>
+      <button class="col-btn" onclick="this.classList.toggle('selected')">Shed</button>
+      <button class="col-btn col-full" onclick="this.classList.toggle('selected')">Custom Structure</button>
+    </div>
+    <div class="divider"></div>
+    <button class="btn btn-primary" onclick="goTo('s-exterior')">Continue to Exterior Inspection →</button>
+  </div>
+</div>
+
+<!-- EXTERIOR -->
+<div class="screen" id="s-exterior">
+  <div class="header"><button class="header-back" onclick="goTo('s-property')">&#8592;</button><h1>Step 4 — Exterior</h1><span class="header-step">4/9</span></div>
+  <div class="progress"><div class="progress-bar" style="width:44%"></div></div>
+  <div class="content">
+    <div class="instr-banner instr"><strong>Instructions</strong>Begin with address photo, then complete each elevation. Proceed to roof verification then slope documentation.</div>
+    <div class="sec-title">Address Documentation</div>
+    <div class="photo-zone"><span class="photo-zone-label">Property Address — Mailbox or Front Elevation</span>
+      <button class="photo-btn" onclick="takePhoto('extAddr','Property Address')">📷 Take Photo</button>
+      <button class="photo-btn secondary" onclick="uploadPhoto('extAddr','Property Address')">🖼 Upload from Library</button>
+      <div class="photo-grid" id="photos-extAddr"></div>
+    </div>
+    <div class="sec-title">Property Elevations</div>
+    <div class="instr-banner instr"><strong>Instructions</strong>Tap each elevation to document. Use multiple overview photos for large structures. Document all damage with overview and close-up shots.</div>
+    <div class="elev-grid">
+      <div class="elev-card" id="elev-N" onclick="openElev('N','North')"><div class="dir">N</div><div class="lbl">North Elevation</div></div>
+      <div class="elev-card" id="elev-W" onclick="openElev('W','West')"><div class="dir">W</div><div class="lbl">West Elevation</div></div>
+      <div class="elev-card" id="elev-S" onclick="openElev('S','South')"><div class="dir">S</div><div class="lbl">South Elevation</div></div>
+      <div class="elev-card" id="elev-E" onclick="openElev('E','East')"><div class="dir">E</div><div class="lbl">East Elevation</div></div>
+    </div>
+    <div class="sec-title">Elevation Verification Photos</div>
+    <div class="chk-item">
+      <input type="checkbox" id="chk-ds">
+      <label for="chk-ds">Downspouts (with tape measure)</label>
+      <button class="cam-btn" onclick="verifPhoto('ds','Downspout Verification')">📷</button>
+      <div class="chk-photos"><div class="photo-grid" id="photos-ds"></div></div>
+    </div>
+    <div class="chk-item">
+      <input type="checkbox" id="chk-sid">
+      <label for="chk-sid">Siding (with tape measure)</label>
+      <button class="cam-btn" onclick="verifPhoto('sid','Siding Verification')">📷</button>
+      <div class="chk-photos"><div class="photo-grid" id="photos-sid"></div></div>
+    </div>
+    <div id="customElevVerif"></div>
+    <button class="add-btn" onclick="addCustomVerif('customElevVerif')">+ Add Custom Verification Item</button>
+
+    <div class="sec-title">Roof Inspection</div>
+    <div class="roof-sec">
+      <div class="roof-sec-hdr" onclick="toggleSec('roofVerif')"><h4>Roof Verification Checklist</h4><span>▼</span></div>
+      <div class="roof-sec-body" id="roofVerif">
+        <div class="instr-banner instr" style="margin-bottom:12px"><strong>Instructions</strong>Complete all verification items before beginning slope documentation.</div>
+        <div class="chk-item"><input type="checkbox"><label>Drip Edge</label><button class="cam-btn" onclick="verifPhoto('drip','Drip Edge')">📷</button><div class="chk-photos"><div class="photo-grid" id="photos-drip"></div></div></div>
+        <div class="chk-item" style="flex-wrap:wrap">
+          <input type="checkbox"><label style="flex:1">Felt Type</label><button class="cam-btn" onclick="verifPhoto('felt','Felt Type')">📷</button>
+          <div class="chk-photos"><div class="photo-grid" id="photos-felt"></div></div>
+          <div class="inline-sel" style="width:100%;margin-top:8px;padding-left:28px">
+            <span class="inline-opt" onclick="selInline(this)">Felt</span><span class="inline-opt" onclick="selInline(this)">Synthetic Felt</span>
+          </div>
+        </div>
+        <div class="chk-item" style="flex-wrap:wrap">
+          <input type="checkbox"><label style="flex:1">Layers of Shingles</label><button class="cam-btn" onclick="verifPhoto('layers','Shingle Layers')">📷</button>
+          <div class="chk-photos"><div class="photo-grid" id="photos-layers"></div></div>
+          <div class="inline-sel" style="width:100%;margin-top:8px;padding-left:28px">
+            <span class="inline-opt" onclick="selInline(this)">Single Layer</span><span class="inline-opt" onclick="selInline(this)">Double Layer</span>
+          </div>
+        </div>
+        <div class="chk-item" style="flex-wrap:wrap">
+          <input type="checkbox"><label style="flex:1">Shingle Type</label><button class="cam-btn" onclick="verifPhoto('shtype','Shingle Type')">📷</button>
+          <div class="chk-photos"><div class="photo-grid" id="photos-shtype"></div></div>
+          <div class="inline-sel" style="width:100%;margin-top:8px;padding-left:28px">
+            <span class="inline-opt" onclick="selInline(this)">Architectural</span><span class="inline-opt" onclick="selInline(this)">3-Tab</span>
+          </div>
+        </div>
+        <div class="chk-item" style="flex-wrap:wrap">
+          <input type="checkbox"><label style="flex:1">Gutter Size</label><button class="cam-btn" onclick="verifPhoto('gutter','Gutter Size')">📷</button>
+          <div class="chk-photos"><div class="photo-grid" id="photos-gutter"></div></div>
+          <div class="inline-sel" style="width:100%;margin-top:8px;padding-left:28px">
+            <span class="inline-opt" onclick="selInline(this)">5 inch</span><span class="inline-opt" onclick="selInline(this)">6 inch</span>
+          </div>
+        </div>
+        <div class="chk-item" style="flex-wrap:wrap">
+          <input type="checkbox"><label style="flex:1">Shingle Thickness</label><button class="cam-btn" onclick="verifPhoto('thick','Shingle Thickness')">📷</button>
+          <div class="chk-photos"><div class="photo-grid" id="photos-thick"></div></div>
+          <div class="inline-sel" style="width:100%;margin-top:8px;padding-left:28px">
+            <span class="inline-opt" onclick="selInline(this)">20yr</span><span class="inline-opt" onclick="selInline(this)">25yr</span><span class="inline-opt" onclick="selInline(this)">30yr</span><span class="inline-opt" onclick="selInline(this)">35yr</span><span class="inline-opt" onclick="selInline(this)">40yr</span><span class="inline-opt" onclick="selInline(this)">50yr</span>
+          </div>
+        </div>
+        <div class="chk-item"><input type="checkbox"><label>Valley Metal</label><button class="cam-btn" onclick="verifPhoto('valley','Valley Metal')">📷</button><div class="chk-photos"><div class="photo-grid" id="photos-valley"></div></div></div>
+        <div class="chk-item"><input type="checkbox"><label>Ice & Water Shield</label><button class="cam-btn" onclick="verifPhoto('iws','Ice & Water Shield')">📷</button><div class="chk-photos"><div class="photo-grid" id="photos-iws"></div></div></div>
+      </div>
+    </div>
+    <div id="roofLevels"></div>
+    <div class="roof-sec">
+      <div class="roof-sec-hdr" onclick="toggleSec('penetrations')"><h4>Penetrations & Flashings</h4><span>▼</span></div>
+      <div class="roof-sec-body" id="penetrations">
+        <div id="penetList">
+          <div class="chk-item"><input type="checkbox"><label>Ridge Vent</label><button class="cam-btn" onclick="verifPhoto('p-ridge','Ridge Vent')">📷</button><div class="chk-photos"><div class="photo-grid" id="photos-p-ridge"></div></div></div>
+          <div class="chk-item"><input type="checkbox"><label>Pipe Flashings</label><button class="cam-btn" onclick="verifPhoto('p-pipe','Pipe Flashings')">📷</button><div class="chk-photos"><div class="photo-grid" id="photos-p-pipe"></div></div></div>
+          <div class="chk-item"><input type="checkbox"><label>Step Flashing</label><button class="cam-btn" onclick="verifPhoto('p-step','Step Flashing')">📷</button><div class="chk-photos"><div class="photo-grid" id="photos-p-step"></div></div></div>
+          <div class="chk-item"><input type="checkbox"><label>Chimney / Flashing</label><button class="cam-btn" onclick="verifPhoto('p-chim','Chimney')">📷</button><div class="chk-photos"><div class="photo-grid" id="photos-p-chim"></div></div></div>
+          <div class="chk-item"><input type="checkbox"><label>Skylights</label><button class="cam-btn" onclick="verifPhoto('p-sky','Skylights')">📷</button><div class="chk-photos"><div class="photo-grid" id="photos-p-sky"></div></div></div>
+          <div class="chk-item"><input type="checkbox"><label>Satellite Dish</label><button class="cam-btn" onclick="verifPhoto('p-sat','Satellite Dish')">📷</button><div class="chk-photos"><div class="photo-grid" id="photos-p-sat"></div></div></div>
+          <div class="chk-item"><input type="checkbox"><label>Antenna</label><button class="cam-btn" onclick="verifPhoto('p-ant','Antenna')">📷</button><div class="chk-photos"><div class="photo-grid" id="photos-p-ant"></div></div></div>
+          <div class="chk-item"><input type="checkbox"><label>HVAC / Vents</label><button class="cam-btn" onclick="verifPhoto('p-hvac','HVAC Vents')">📷</button><div class="chk-photos"><div class="photo-grid" id="photos-p-hvac"></div></div></div>
+        </div>
+        <button class="add-btn" onclick="addCustomVerif('penetList')">+ Add Custom Penetration</button>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <button class="btn btn-primary" onclick="goTo('s-interior')">Continue to Interior Inspection →</button>
+  </div>
+</div>
+
+<!-- INTERIOR -->
+<div class="screen" id="s-interior">
+  <div class="header"><button class="header-back" onclick="goTo('s-exterior')">&#8592;</button><h1>Step 5 — Interior</h1><span class="header-step">5/9</span></div>
+  <div class="progress"><div class="progress-bar" style="width:55%"></div></div>
+  <div class="content">
+    <div class="instr-banner instr"><strong>Instructions</strong>Select floor level then tap each room to document. Toggle damage status and follow the photo sequence for each room.</div>
+    <div class="sec-title">Floor Level</div>
+    <div class="col-list" id="floorList">
+      <button class="col-btn" onclick="pickOne(this,'floorList');setFloor('Basement')">Basement</button>
+      <button class="col-btn selected" onclick="pickOne(this,'floorList');setFloor('First Floor')">First Floor</button>
+      <button class="col-btn" onclick="pickOne(this,'floorList');setFloor('Second Floor')">Second Floor</button>
+      <button class="col-btn" onclick="pickOne(this,'floorList');setFloor('Third Floor')">Third Floor</button>
+    </div>
+    <div class="sec-title">Rooms — <span id="floorLabel">First Floor</span></div>
+    <div id="roomList">
+      <div class="room-item" onclick="openRoom('Foyer')"><h5>Foyer</h5><span class="status">Tap to inspect</span></div>
+      <div class="room-item" onclick="openRoom('Living Room')"><h5>Living Room</h5><span class="status">Tap to inspect</span></div>
+      <div class="room-item" onclick="openRoom('Dining Room')"><h5>Dining Room</h5><span class="status">Tap to inspect</span></div>
+      <div class="room-item" onclick="openRoom('Great Room')"><h5>Great Room</h5><span class="status">Tap to inspect</span></div>
+      <div class="room-item" onclick="openRoom('Kitchen')"><h5>Kitchen</h5><span class="status">Tap to inspect</span></div>
+      <div class="room-item" onclick="openRoom('Pantry')"><h5>Pantry</h5><span class="status">Tap to inspect</span></div>
+      <div class="room-item" onclick="openRoom('Breakfast Room')"><h5>Breakfast Room</h5><span class="status">Tap to inspect</span></div>
+      <div class="room-item" onclick="openRoom('Laundry Room')"><h5>Laundry Room</h5><span class="status">Tap to inspect</span></div>
+      <div class="room-item" onclick="openRoom('Master Bedroom')"><h5>Master Bedroom</h5><span class="status">Tap to inspect</span></div>
+      <div class="room-item" onclick="openRoom('Master Bathroom')"><h5>Master Bathroom</h5><span class="status">Tap to inspect</span></div>
+      <div class="room-item" onclick="openRoom('Master Closet')"><h5>Master Closet</h5><span class="status">Tap to inspect</span></div>
+      <div class="room-item" onclick="openRoom('Bedroom 1')"><h5>Bedroom 1</h5><span class="status">Tap to inspect</span></div>
+      <div class="room-item" onclick="openRoom('Bedroom 2')"><h5>Bedroom 2</h5><span class="status">Tap to inspect</span></div>
+      <div class="room-item" onclick="openRoom('Bedroom 3')"><h5>Bedroom 3</h5><span class="status">Tap to inspect</span></div>
+      <div class="room-item" onclick="openRoom('Bedroom 4')"><h5>Bedroom 4</h5><span class="status">Tap to inspect</span></div>
+    </div>
+    <button class="add-btn" onclick="addCustomRoom()">+ Add Custom Room</button>
+    <div class="divider"></div>
+    <button class="btn btn-primary" onclick="goTo('s-other')">Continue to Other Structures →</button>
+  </div>
+</div>
+
+<!-- ROOM DETAIL -->
+<div class="screen" id="s-room">
+  <div class="header"><button class="header-back" onclick="goTo('s-interior')">&#8592;</button><h1 id="roomTitle">Room</h1><span class="header-step">5/9</span></div>
+  <div class="content">
+    <div class="instr-banner instr"><strong>Instructions</strong>Document room condition with overview photos first. Then set damage status and follow the documentation sequence.</div>
+    <div class="sec-title">Room Overview Photos</div>
+    <div class="photo-zone"><span class="photo-zone-label">Diagonal Corner 1 Overview</span>
+      <button class="photo-btn" onclick="takePhoto('rm-diag1','Room Diagonal Corner 1')">📷 Take Photo</button>
+      <button class="photo-btn secondary" onclick="uploadPhoto('rm-diag1','Room Diagonal Corner 1')">🖼 Upload</button>
+      <div class="photo-grid" id="photos-rm-diag1"></div>
+    </div>
+    <div class="photo-zone"><span class="photo-zone-label">Diagonal Corner 2 Overview</span>
+      <button class="photo-btn" onclick="takePhoto('rm-diag2','Room Diagonal Corner 2')">📷 Take Photo</button>
+      <button class="photo-btn secondary" onclick="uploadPhoto('rm-diag2','Room Diagonal Corner 2')">🖼 Upload</button>
+      <div class="photo-grid" id="photos-rm-diag2"></div>
+    </div>
+    <div class="photo-zone"><span class="photo-zone-label">Ceiling to Wall</span>
+      <button class="photo-btn" onclick="takePhoto('rm-ceil','Ceiling to Wall')">📷 Take Photo</button>
+      <button class="photo-btn secondary" onclick="uploadPhoto('rm-ceil','Ceiling to Wall')">🖼 Upload</button>
+      <div class="photo-grid" id="photos-rm-ceil"></div>
+    </div>
+    <div class="photo-zone"><span class="photo-zone-label">Wall to Floor</span>
+      <button class="photo-btn" onclick="takePhoto('rm-floor','Wall to Floor')">📷 Take Photo</button>
+      <button class="photo-btn secondary" onclick="uploadPhoto('rm-floor','Wall to Floor')">🖼 Upload</button>
+      <div class="photo-grid" id="photos-rm-floor"></div>
+    </div>
+    <div class="sec-title">Damage Status</div>
+    <div class="dmg-toggle">
+      <button class="dmg-btn yes" onclick="toggleRoomDmg(true)">Damage Observed</button>
+      <button class="dmg-btn no" onclick="toggleRoomDmg(false)">No Damage</button>
+    </div>
+    <div id="roomDmgSec" style="display:none">
+      <div class="sec-title">Damage Photos</div>
+      <div class="photo-zone"><span class="photo-zone-label">Overview of Damaged Area</span>
+        <button class="photo-btn" onclick="takePhoto('rm-dmgOv','Damage Overview')">📷 Take Photo</button>
+        <button class="photo-btn secondary" onclick="uploadPhoto('rm-dmgOv','Damage Overview')">🖼 Upload</button>
+        <div class="photo-grid" id="photos-rm-dmgOv"></div>
+      </div>
+      <div class="photo-zone"><span class="photo-zone-label">Photo of Damage</span>
+        <button class="photo-btn" onclick="takePhoto('rm-dmg','Damage Photo')">📷 Take Photo</button>
+        <button class="photo-btn secondary" onclick="uploadPhoto('rm-dmg','Damage Photo')">🖼 Upload</button>
+        <div class="photo-grid" id="photos-rm-dmg"></div>
+      </div>
+      <div class="photo-zone"><span class="photo-zone-label">Close-up of Damage</span>
+        <button class="photo-btn" onclick="takePhoto('rm-dmgCu','Damage Close-up')">📷 Take Photo</button>
+        <button class="photo-btn secondary" onclick="uploadPhoto('rm-dmgCu','Damage Close-up')">🖼 Upload</button>
+        <div class="photo-grid" id="photos-rm-dmgCu"></div>
+      </div>
+      <div class="sec-title">Size Verification</div>
+      <div class="chk-item"><input type="checkbox"><label>Crown Mold (tape measure)</label><button class="cam-btn" onclick="verifPhoto('rm-crown','Crown Mold')">📷</button><div class="chk-photos"><div class="photo-grid" id="photos-rm-crown"></div></div></div>
+      <div class="chk-item"><input type="checkbox"><label>Chair Rail</label><button class="cam-btn" onclick="verifPhoto('rm-chair','Chair Rail')">📷</button><div class="chk-photos"><div class="photo-grid" id="photos-rm-chair"></div></div></div>
+      <div class="chk-item"><input type="checkbox"><label>Door Casing</label><button class="cam-btn" onclick="verifPhoto('rm-door','Door Casing')">📷</button><div class="chk-photos"><div class="photo-grid" id="photos-rm-door"></div></div></div>
+      <div class="chk-item"><input type="checkbox"><label>Window Casing</label><button class="cam-btn" onclick="verifPhoto('rm-win','Window Casing')">📷</button><div class="chk-photos"><div class="photo-grid" id="photos-rm-win"></div></div></div>
+      <div class="chk-item"><input type="checkbox"><label>Baseboards</label><button class="cam-btn" onclick="verifPhoto('rm-base','Baseboards')">📷</button><div class="chk-photos"><div class="photo-grid" id="photos-rm-base"></div></div></div>
+      <div class="sec-title">Interior Finishes</div>
+      <div class="sub-sec"><h5>Ceiling</h5>
+        <div class="mat-grid">
+          <button class="mat-btn" onclick="pickMat(this,'ceil')">Drywall</button><button class="mat-btn" onclick="pickMat(this,'ceil')">Plaster</button>
+          <button class="mat-btn" onclick="pickMat(this,'ceil')">Wood</button><button class="mat-btn" onclick="pickMat(this,'ceil')">Acoustical Tile</button>
+        </div>
+        <div class="inline-sel" style="margin-top:8px">
+          <span class="inline-opt" onclick="selInline(this)">Paint</span><span class="inline-opt" onclick="selInline(this)">Texture</span><span class="inline-opt" onclick="selInline(this)">Sprayed Acoustics</span>
+        </div>
+        <input class="fi" type="number" placeholder="Damaged area (sq ft)" style="margin-top:8px" oninput="autoSave()">
+      </div>
+      <div class="sub-sec"><h5>Walls</h5>
+        <div class="mat-grid">
+          <button class="mat-btn" onclick="pickMat(this,'wall')">Drywall</button><button class="mat-btn" onclick="pickMat(this,'wall')">Plaster</button>
+          <button class="mat-btn" onclick="pickMat(this,'wall')">Paneling</button><button class="mat-btn" onclick="pickMat(this,'wall')">Wood</button>
+        </div>
+        <div class="inline-sel" style="margin-top:8px;flex-wrap:wrap">
+          <span class="inline-opt" onclick="selInline(this)">Paint 1-color</span><span class="inline-opt" onclick="selInline(this)">Paint 2-color</span>
+          <span class="inline-opt" onclick="selInline(this)">Paint 3-color</span><span class="inline-opt" onclick="selInline(this)">Texture</span><span class="inline-opt" onclick="selInline(this)">Wallpaper</span>
+        </div>
+        <input class="fi" type="number" placeholder="Damaged area (sq ft)" style="margin-top:8px" oninput="autoSave()">
+      </div>
+      <div class="sub-sec"><h5>Floors</h5>
+        <div class="mat-grid">
+          <button class="mat-btn" onclick="pickMat(this,'floor')">Hardwood</button><button class="mat-btn" onclick="pickMat(this,'floor')">Engineered Wood</button>
+          <button class="mat-btn" onclick="pickMat(this,'floor')">Laminate</button><button class="mat-btn" onclick="pickMat(this,'floor')">Sheet Vinyl</button>
+          <button class="mat-btn" onclick="pickMat(this,'floor')">Vinyl Tile</button><button class="mat-btn" onclick="pickMat(this,'floor')">Ceramic/Porcelain</button>
+          <button class="mat-btn" onclick="pickMat(this,'floor')">Cork</button><button class="mat-btn" onclick="pickMat(this,'floor')">Custom</button>
+        </div>
+        <input class="fi" placeholder="Floor thickness (wood/engineered)" style="margin-top:8px" oninput="autoSave()">
+        <input class="fi" placeholder="Tile type (if applicable)" style="margin-top:6px" oninput="autoSave()">
+        <input class="fi" type="number" placeholder="Damaged area (sq ft)" style="margin-top:6px" oninput="autoSave()">
+        <div class="photo-zone" style="margin-top:10px"><span class="photo-zone-label">Floor Cross-Section (via register)</span>
+          <button class="photo-btn" onclick="takePhoto('rm-floorX','Floor Cross-Section')">📷 Take Photo</button>
+          <button class="photo-btn secondary" onclick="uploadPhoto('rm-floorX','Floor Cross-Section')">🖼 Upload</button>
+          <div class="photo-grid" id="photos-rm-floorX"></div>
+        </div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <button class="btn btn-primary" onclick="goTo('s-interior')">Save Room & Return →</button>
+  </div>
+</div>
+
+<!-- OTHER STRUCTURES -->
+<div class="screen" id="s-other">
+  <div class="header"><button class="header-back" onclick="goTo('s-interior')">&#8592;</button><h1>Step 6 — Other Structures</h1><span class="header-step">6/9</span></div>
+  <div class="progress"><div class="progress-bar" style="width:66%"></div></div>
+  <div class="content">
+    <div class="instr-banner instr"><strong>Instructions</strong>Document all other structures on the property. Each gets its own inspection sequence.</div>
+    <div id="otherStructList">
+      <div class="step-card" onclick="goTo('s-fence')"><div><h3>Fence</h3><p>Inspection, type, verification</p></div><span class="arrow">›</span></div>
+      <div class="step-card" onclick="alert('Detached Garage workflow coming in next version.')"><div><h3>Detached Garage</h3><p>Roof, elevations, damage</p></div><span class="arrow">›</span></div>
+    </div>
+    <button class="add-btn" onclick="addCustomStruct()">+ Add Custom Structure</button>
+    <div class="divider"></div>
+    <button class="btn btn-primary" onclick="goTo('s-pp')">Continue to Personal Property →</button>
+  </div>
+</div>
+
+<!-- FENCE -->
+<div class="screen" id="s-fence">
+  <div class="header"><button class="header-back" onclick="goTo('s-other')">&#8592;</button><h1>Fence Inspection</h1><span class="header-step">6/9</span></div>
+  <div class="content">
+    <div class="instr-banner instr"><strong>Instructions</strong>Document fence with aerial reference, overview photos, condition, and damage. Note co-ownership if applicable.</div>
+    <div class="photo-zone"><span class="photo-zone-label">Google Earth / Aerial Photo</span>
+      <button class="photo-btn" onclick="takePhoto('fence-aerial','Fence Aerial View')">📷 Take Photo</button>
+      <button class="photo-btn secondary" onclick="uploadPhoto('fence-aerial','Fence Aerial View')">🖼 Upload from Library</button>
+      <div class="photo-grid" id="photos-fence-aerial"></div>
+    </div>
+    <div class="photo-zone"><span class="photo-zone-label">Fence Overview</span>
+      <button class="photo-btn" onclick="takePhoto('fence-ov','Fence Overview')">📷 Take Photo</button>
+      <button class="photo-btn secondary" onclick="uploadPhoto('fence-ov','Fence Overview')">🖼 Upload</button>
+      <div class="photo-grid" id="photos-fence-ov"></div>
+    </div>
+    <div class="sec-title">Fence Details</div>
+    <div class="fg"><label class="fl">Fence Type</label>
+      <select class="fsel" onchange="autoSave()"><option>Select...</option><option>Chain Link</option><option>Pressure-Treated Wood</option><option>Cedar</option><option>Vinyl</option><option>Aluminum</option><option>Wrought Iron</option></select>
+    </div>
+    <div class="fg"><label class="fl">Fence Finish</label>
+      <select class="fsel" onchange="autoSave()"><option>Select...</option><option>Painted</option><option>Stained</option><option>Natural / No Finish</option></select>
+    </div>
+    <div class="fg"><label class="fl">Fence Height</label>
+      <div style="display:flex;gap:8px">
+        <select class="fsel" id="fenceHt" onchange="checkFenceCustom(this)" style="flex:1"><option>Select...</option><option>3 ft</option><option>4 ft</option><option>5 ft</option><option>6 ft</option><option>7 ft</option><option>8 ft</option><option value="custom">Custom...</option></select>
+        <input class="fi" id="fenceCustomHt" placeholder="ft" style="display:none;width:80px" oninput="autoSave()">
+      </div>
+    </div>
+    <div class="sec-title">Condition</div>
+    <div class="fg"><label class="fl">Out of plumb?</label>
+      <div class="dmg-toggle">
+        <button class="dmg-btn yes" onclick="toggle2('fencePlumb',true)">Yes</button>
+        <button class="dmg-btn no" onclick="toggle2('fencePlumb',false)">No</button>
+      </div>
+    </div>
+    <div id="sec-fencePlumb" style="display:none">
+      <div class="photo-zone"><span class="photo-zone-label">Level Photo — Out of Plumb</span>
+        <button class="photo-btn" onclick="takePhoto('fence-plumb','Fence Out of Plumb')">📷 Take Photo</button>
+        <button class="photo-btn secondary" onclick="uploadPhoto('fence-plumb','Fence Out of Plumb')">🖼 Upload</button>
+        <div class="photo-grid" id="photos-fence-plumb"></div>
+      </div>
+    </div>
+    <div class="sec-title">Damage</div>
+    <div class="photo-zone"><span class="photo-zone-label">Overview of Damage</span>
+      <button class="photo-btn" onclick="takePhoto('fence-dmgOv','Fence Damage Overview')">📷 Take Photo</button>
+      <button class="photo-btn secondary" onclick="uploadPhoto('fence-dmgOv','Fence Damage Overview')">🖼 Upload</button>
+      <div class="photo-grid" id="photos-fence-dmgOv"></div>
+    </div>
+    <div class="photo-zone"><span class="photo-zone-label">Close-up of Damage</span>
+      <button class="photo-btn" onclick="takePhoto('fence-dmgCu','Fence Damage Close-up')">📷 Take Photo</button>
+      <button class="photo-btn secondary" onclick="uploadPhoto('fence-dmgCu','Fence Damage Close-up')">🖼 Upload</button>
+      <div class="photo-grid" id="photos-fence-dmgCu"></div>
+    </div>
+    <div class="sec-title">Verification</div>
+    <div class="chk-item"><input type="checkbox"><label>Fence is co-owned with neighbor</label><button class="cam-btn" onclick="verifPhoto('fence-coown','Fence Co-ownership')">📷</button><div class="chk-photos"><div class="photo-grid" id="photos-fence-coown"></div></div></div>
+    <div class="divider"></div>
+    <button class="btn btn-primary" onclick="goTo('s-other')">Save & Return to Other Structures</button>
+  </div>
+</div>
+
+<!-- PERSONAL PROPERTY -->
+<div class="screen" id="s-pp">
+  <div class="header"><button class="header-back" onclick="goTo('s-other')">&#8592;</button><h1>Step 7 — Personal Property</h1><span class="header-step">7/9</span></div>
+  <div class="progress"><div class="progress-bar" style="width:77%"></div></div>
+  <div class="content">
+    <div class="instr-banner instr"><strong>Instructions</strong>Document all claimed personal property. Provide inventory form and photograph each item. High-value items require additional documentation.</div>
+    <div class="fg"><label class="fl">Personal property damage claimed?</label>
+      <div class="dmg-toggle">
+        <button class="dmg-btn yes" onclick="toggle2('pp',true)">Yes</button>
+        <button class="dmg-btn no" onclick="toggle2('pp',false)">No</button>
+      </div>
+    </div>
+    <div id="sec-pp" style="display:none">
+      <div class="alert alert-info">Provide the insured with a Personal Property Inventory Form. List each item with description, age, quantity, and estimated value.</div>
+      <div class="photo-zone"><span class="photo-zone-label">Damaged Item Photo</span>
+        <button class="photo-btn" onclick="takePhoto('pp-item','Personal Property Item')">📷 Take Photo</button>
+        <button class="photo-btn secondary" onclick="uploadPhoto('pp-item','Personal Property Item')">🖼 Upload</button>
+        <div class="photo-grid" id="photos-pp-item"></div>
+      </div>
+      <div class="photo-zone"><span class="photo-zone-label">Manufacturer's Tag</span>
+        <button class="photo-btn" onclick="takePhoto('pp-tag','Manufacturer Tag')">📷 Take Photo</button>
+        <button class="photo-btn secondary" onclick="uploadPhoto('pp-tag','Manufacturer Tag')">🖼 Upload</button>
+        <div class="photo-grid" id="photos-pp-tag"></div>
+      </div>
+      <div class="photo-zone"><span class="photo-zone-label">Close-up of Damage</span>
+        <button class="photo-btn" onclick="takePhoto('pp-cu','PP Damage Close-up')">📷 Take Photo</button>
+        <button class="photo-btn secondary" onclick="uploadPhoto('pp-cu','PP Damage Close-up')">🖼 Upload</button>
+        <div class="photo-grid" id="photos-pp-cu"></div>
+      </div>
+      <div class="fg" style="margin-top:12px"><label class="fl">High-value items claimed?</label>
+        <div class="dmg-toggle">
+          <button class="dmg-btn yes" onclick="toggle2('hv',true)">Yes</button>
+          <button class="dmg-btn no" onclick="toggle2('hv',false)">No</button>
+        </div>
+      </div>
+      <div id="sec-hv" style="display:none">
+        <div class="fg"><label class="fl">Repair possible?</label>
+          <div class="dmg-toggle">
+            <button class="dmg-btn no" onclick="alert('Request estimate or invoice from qualified repair technician.')">Yes — Request Estimate</button>
+            <button class="dmg-btn yes" onclick="toggle2('salvage',true)">No — Total Loss</button>
+          </div>
+        </div>
+        <div id="sec-salvage" style="display:none">
+          <div class="alert alert-warn">Discuss buyback options with insured for salvageable items.</div>
+          <div class="fg"><label class="fl">Technician report available?</label>
+            <div class="dmg-toggle">
+              <button class="dmg-btn no" onclick="alert('Upload technician report to claim file.')">Yes — Upload</button>
+              <button class="dmg-btn" onclick="alert('Request technician inspection. Document the date of request.')">No — Request</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <button class="btn btn-primary" onclick="goTo('s-summary')">Continue to Summary →</button>
+  </div>
+</div>
+
+<!-- SUMMARY -->
+<div class="screen" id="s-summary">
+  <div class="header"><button class="header-back" onclick="goTo('s-pp')">&#8592;</button><h1>Step 8 — Summary</h1><span class="header-step">8/9</span></div>
+  <div class="progress"><div class="progress-bar" style="width:88%"></div></div>
+  <div class="content">
+    <div class="alert alert-success">Inspection complete. Review summary and generate your report.</div>
+    <div class="sec-title">Claim Summary</div>
+    <div class="sum-row"><span class="lbl">Claim Number</span><span class="val" id="sum-claim">—</span></div>
+    <div class="sum-row"><span class="lbl">Insured</span><span class="val" id="sum-insured">—</span></div>
+    <div class="sum-row"><span class="lbl">Address</span><span class="val" id="sum-addr">—</span></div>
+    <div class="sum-row"><span class="lbl">Date of Loss</span><span class="val" id="sum-dol">—</span></div>
+    <div class="sum-row"><span class="lbl">Cause of Loss</span><span class="val" id="sum-col">—</span></div>
+    <div class="sum-row"><span class="lbl">Adjuster</span><span class="val" id="sum-adj">—</span></div>
+    <div class="sum-row"><span class="lbl">Inspection Date</span><span class="val" id="sum-date">—</span></div>
+    <div class="sum-row"><span class="lbl">Total Photos Captured</span><span class="val" id="sum-photos">—</span></div>
+    <div class="sec-title">Report Output</div>
+    <button class="btn btn-primary" onclick="alert('PDF report generation requires a connected backend. Feature coming in production version.')">Generate PDF Report</button>
+    <button class="btn btn-secondary" style="margin-top:8px" onclick="exportJSON()">Export Claim Data (JSON)</button>
+    <button class="btn btn-secondary" style="margin-top:8px" onclick="alert('Photo log export coming in production version.')">Export Photo Log</button>
+    <div class="sec-title">Data Management</div>
+    <button class="btn btn-secondary" onclick="saveClaim()">💾 Save Claim to Device</button>
+    <button class="btn btn-danger" style="margin-top:8px" onclick="clearClaim()">🗑 Clear & Start New Claim</button>
+    <div class="divider"></div>
+    <button class="btn btn-primary" style="background:#2980b9" onclick="goTo('s-feedback')">Continue to Feedback →</button>
+  </div>
+</div>
+
+<!-- FEEDBACK -->
+<div class="screen" id="s-feedback">
+  <div class="header"><button class="header-back" onclick="goTo('s-summary')">&#8592;</button><h1>App Feedback</h1><span class="header-step">9/9</span></div>
+  <div class="progress"><div class="progress-bar" style="width:100%"></div></div>
+  <div class="content">
+    <div class="alert alert-info">This feedback is NOT part of the claim file. Your suggestions go directly to the SAG home office.</div>
+    <div class="fg"><label class="fl">What worked well?</label><textarea class="feedback-ta" placeholder="What you found helpful..."></textarea></div>
+    <div class="fg"><label class="fl">What could be improved?</label><textarea class="feedback-ta" placeholder="Issues or missing features..."></textarea></div>
+    <div class="fg"><label class="fl">Additional suggestions</label><textarea class="feedback-ta" placeholder="Any other thoughts..."></textarea></div>
+    <div class="fg"><label class="fl">Your name (optional)</label><input class="fi" placeholder="Adjuster name"></div>
+    <div class="divider"></div>
+    <button class="btn btn-primary" onclick="submitFeedback()">Send Feedback to SAG Home Office</button>
+    <button class="btn btn-secondary" style="margin-top:8px" onclick="goTo('s-splash')">Return to Home Screen</button>
+  </div>
+</div>
+
+<!-- ELEVATION MODAL -->
+<div class="modal-overlay" id="elevModal">
+  <div class="modal-inner">
+    <div class="header"><button class="header-back" onclick="closeElev()">&#8592;</button><h1 id="elevTitle">Elevation</h1></div>
+    <div style="padding:16px">
+      <div class="instr-banner instr"><strong>Instructions</strong>Capture overview photos of the entire elevation. Use multiple for large structures. Then document any damage.</div>
+      <div class="sec-title" id="elevLabel">Elevation — Overview</div>
+      <div class="photo-zone"><span class="photo-zone-label" id="elevOvLabel">Overview Photos</span>
+        <button class="photo-btn" onclick="takePhoto('elev-ov','Elevation Overview')">📷 Take Photo</button>
+        <button class="photo-btn secondary" onclick="uploadPhoto('elev-ov','Elevation Overview')">🖼 Upload</button>
+        <div class="photo-grid" id="photos-elev-ov"></div>
+      </div>
+      <div class="sec-title">Damage</div>
+      <div class="dmg-toggle">
+        <button class="dmg-btn yes" onclick="document.getElementById('elevDmgSec').style.display='block'">Damage Observed</button>
+        <button class="dmg-btn no" onclick="document.getElementById('elevDmgSec').style.display='none'">No Damage</button>
+      </div>
+      <div id="elevDmgSec" style="display:none">
+        <div class="photo-zone" style="margin-top:10px"><span class="photo-zone-label">Overview of Damaged Area</span>
+          <button class="photo-btn" onclick="takePhoto('elev-dmgOv','Elevation Damage Overview')">📷 Take Photo</button>
+          <button class="photo-btn secondary" onclick="uploadPhoto('elev-dmgOv','Elevation Damage Overview')">🖼 Upload</button>
+          <div class="photo-grid" id="photos-elev-dmgOv"></div>
+        </div>
+        <div class="photo-zone"><span class="photo-zone-label">Photo of Damage</span>
+          <button class="photo-btn" onclick="takePhoto('elev-dmg','Elevation Damage')">📷 Take Photo</button>
+          <button class="photo-btn secondary" onclick="uploadPhoto('elev-dmg','Elevation Damage')">🖼 Upload</button>
+          <div class="photo-grid" id="photos-elev-dmg"></div>
+        </div>
+        <div class="photo-zone"><span class="photo-zone-label">Close-up of Damage</span>
+          <button class="photo-btn" onclick="takePhoto('elev-dmgCu','Elevation Damage Close-up')">📷 Take Photo</button>
+          <button class="photo-btn secondary" onclick="uploadPhoto('elev-dmgCu','Elevation Damage Close-up')">🖼 Upload</button>
+          <div class="photo-grid" id="photos-elev-dmgCu"></div>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <button class="btn btn-primary" onclick="saveElev()">Save Elevation & Continue</button>
+    </div>
+  </div>
+</div>
+
+<!-- HIDDEN FILE INPUT -->
+<input type="file" id="fileInput" accept="image/*" style="display:none" onchange="handleFileInput(event)">
+<input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none" onchange="handleFileInput(event)">
+
+</div>
+
+<script>
+var state = {claimId:null,col:'',stories:'1',currentRoom:'',currentElev:'',photoTarget:'',photos:{},fields:{}};
+var showInstr = true;
+var photoCount = 0;
+
+function goTo(id){
+  document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active')});
+  var sc = document.getElementById(id);
+  if(sc){sc.classList.add('active');window.scrollTo(0,0);}
+  document.getElementById('toggleBar').style.display = id==='s-splash'||id==='s-claims' ? 'none':'flex';
+  if(id==='s-summary') updateSummary();
+}
+
+function newClaim(){
+  state.claimId = 'CLM-'+Date.now();
+  state.photos = {};
+  photoCount = 0;
+  goTo('s-step1');
+  setTimeout(function(){
+    setField('f-claimNum','CLM-2024-048821');
+    setField('f-carrier','Meridian Insurance Group');
+    setField('f-dol','2024-04-15');
+    setField('f-adjName','James R. Thornton');
+    setField('f-adjLic','TX-ADJ-88234');
+    setField('f-insName','Robert & Patricia Kessler');
+    setField('f-addr','4821 Weatherford Drive');
+    setField('f-city','Tulsa');
+    setField('f-state','OK');
+    setField('f-zip','74105');
+    setField('f-phone','(918) 555-0247');
+    setField('f-email','rkessler@email.com');
+    setField('f-lien1name','Wells Fargo Home Mortgage');
+    setField('f-lien1loan','WF-00482-2019');
+    setField('f-yearBuilt','1987');
+    setField('f-roofYear','2011');
+    setField('f-fnolAddr','4821 Weatherford Drive, Tulsa, OK 74105');
+  },100);
+}
+
+function setField(id,val){var el=document.getElementById(id);if(el)el.value=val;}
+
+function autoSave(){
+  var inputs = document.querySelectorAll('.fi,.fsel');
+  inputs.forEach(function(el){if(el.id)state.fields[el.id]=el.value;});
+  saveToStorage();
+  showSaved();
+}
+
+function saveToStorage(){
+  try{
+    var data = {state:state,ts:Date.now()};
+    var claims = JSON.parse(localStorage.getItem('sagClaims')||'{}');
+    claims[state.claimId] = data;
+    localStorage.setItem('sagClaims',JSON.stringify(claims));
+  }catch(e){console.log('Storage full or unavailable');}
+}
+
+function saveClaim(){saveToStorage();showSaved();alert('Claim saved to device successfully.');}
+
+function showSaved(){
+  var ind = document.getElementById('saveInd');
+  ind.style.opacity='1';
+  setTimeout(function(){ind.style.opacity='0';},1500);
+}
+
+function loadClaims(){
+  var list = document.getElementById('claimsList');
+  try{
+    var claims = JSON.parse(localStorage.getItem('sagClaims')||'{}');
+    var keys = Object.keys(claims);
+    if(!keys.length){list.innerHTML='<p style="color:#888;font-size:14px;padding:20px 0">No saved claims found.</p>';return;}
+    list.innerHTML='';
+    keys.reverse().forEach(function(k){
+      var d = claims[k];
+      var row = document.createElement('div');
+      row.className='claim-row';
+      var fields = d.state.fields||{};
+      row.innerHTML='<div><h4>'+(fields['f-claimNum']||k)+'</h4><p>'+(fields['f-insName']||'Unknown insured')+' · '+(fields['f-dol']||'No date')+'</p></div><span style="color:#2980b9;font-size:18px">›</span>';
+      row.onclick=function(){loadClaim(k);};
+      list.appendChild(row);
+    });
+  }catch(e){list.innerHTML='<p style="color:#888;font-size:14px">Could not load saved claims.</p>';}
+}
+
+function loadClaim(id){
+  try{
+    var claims = JSON.parse(localStorage.getItem('sagClaims')||'{}');
+    if(claims[id]){
+      state = claims[id].state;
+      goTo('s-step1');
+      setTimeout(function(){
+        Object.keys(state.fields).forEach(function(k){setField(k,state.fields[k]);});
+        Object.keys(state.photos).forEach(function(k){restorePhotos(k);});
+        buildRoofLevels();
+      },100);
+    }
+  }catch(e){alert('Could not load claim.');}
+}
+
+function restorePhotos(key){
+  var grid = document.getElementById('photos-'+key);
+  if(!grid||!state.photos[key]) return;
+  state.photos[key].forEach(function(src,i){
+    addThumb(grid,src,key,i);
+  });
+}
+
+function clearClaim(){
+  if(confirm('Clear this claim and start new? All unsaved data will be lost.')){
+    state={claimId:null,col:'',stories:'1',currentRoom:'',currentElev:'',photoTarget:'',photos:{},fields:{}};
+    photoCount=0;
+    goTo('s-splash');
+  }
+}
+
+function exportJSON(){
+  autoSave();
+  var data = JSON.stringify(state,null,2);
+  var blob = new Blob([data],{type:'application/json'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href=url;
+  a.download='SAG-Claim-'+(state.fields['f-claimNum']||state.claimId)+'.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function takePhoto(target,label){
+  state.photoTarget = target;
+  state.photoLabel = label;
+  document.getElementById('cameraInput').click();
+}
+
+function uploadPhoto(target,label){
+  state.photoTarget = target;
+  state.photoLabel = label;
+  document.getElementById('fileInput').click();
+}
+
+function verifPhoto(target,label){
+  state.photoTarget = target;
+  state.photoLabel = label;
+  var btn = event.target;
+  document.getElementById('cameraInput').click();
+  setTimeout(function(){
+    if(btn){btn.classList.add('done');btn.textContent='✓ Done';}
+    var row = btn?btn.closest('.chk-item'):null;
+    if(row){var cb=row.querySelector('input[type=checkbox]');if(cb)cb.checked=true;}
+  },500);
+}
+
+function handleFileInput(evt){
+  var file = evt.target.files[0];
+  if(!file) return;
+  var target = state.photoTarget;
+  var reader = new FileReader();
+  reader.onload = function(e){
+    var src = e.target.result;
+    if(!state.photos[target]) state.photos[target]=[];
+    var idx = state.photos[target].length;
+    state.photos[target].push(src);
+    photoCount++;
+    var grid = document.getElementById('photos-'+target);
+    if(grid) addThumb(grid,src,target,idx);
+    saveToStorage();
+    showSaved();
+  };
+  reader.readAsDataURL(file);
+  evt.target.value='';
+}
+
+function addThumb(grid,src,target,idx){
+  var div = document.createElement('div');
+  div.className='photo-thumb';
+  div.innerHTML='<img src="'+src+'" alt="Photo"><button class="del-photo" onclick="deletePhoto(\''+target+'\','+idx+',this)">✕</button>';
+  grid.appendChild(div);
+}
+
+function deletePhoto(target,idx,btn){
+  if(!confirm('Delete this photo?')) return;
+  if(state.photos[target]){
+    state.photos[target].splice(idx,1);
+    photoCount = Math.max(0,photoCount-1);
+    var grid = btn.closest('.photo-grid');
+    if(grid){grid.innerHTML='';state.photos[target].forEach(function(s,i){addThumb(grid,s,target,i);});}
+    saveToStorage();
+  }
+}
+
+function captureGeo(){
+  if(navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(function(pos){
+      var lat=pos.coords.latitude.toFixed(4),lng=pos.coords.longitude.toFixed(4);
+      var t=new Date().toLocaleTimeString();
+      document.getElementById('geoStamp').textContent='📍 '+lat+'° N, '+Math.abs(lng)+'° W — '+t+' (Geo-stamped)';
+      state.fields['geo']=lat+','+lng+' @ '+t;
+      saveToStorage();
+    },function(){
+      document.getElementById('geoStamp').textContent='📍 Location captured — '+new Date().toLocaleTimeString();
+    });
+  } else {
+    document.getElementById('geoStamp').textContent='📍 Location captured — '+new Date().toLocaleTimeString();
+  }
+}
+
+function toggleInstr(){
+  showInstr=document.getElementById('instrToggle').checked;
+  document.querySelectorAll('.instr').forEach(function(el){el.style.display=showInstr?'block':'none';});
+}
+
+function toggle2(key,val){
+  var sec=document.getElementById('sec-'+key);
+  if(sec) sec.style.display=val?'block':'none';
+  var yBtn=document.getElementById('btn-'+key+'Y');
+  var nBtn=document.getElementById('btn-'+key+'N');
+  if(yBtn) yBtn.className='dmg-btn'+(val?' yes':'');
+  if(nBtn) nBtn.className='dmg-btn'+(val?'':' no');
+  autoSave();
+}
+
+function pickOne(el,listId){
+  document.querySelectorAll('#'+listId+' .col-btn').forEach(function(b){b.classList.remove('selected');});
+  el.classList.add('selected');
+  autoSave();
+}
+
+function pickStories(el,val){
+  state.stories=val;
+  pickOne(el,'storiesList');
+  var note=document.getElementById('storyNote');
+  if(val==='1'){note.style.display='none';}
+  else{
+    note.style.display='block';
+    var map={'1.5':'upper and lower roof levels','2':'first and second story roof levels','3':'first, second, and third story roof levels'};
+    note.textContent='Multi-story — roof inspection will document '+map[val]+' separately.';
+  }
+  buildRoofLevels();
+}
+
+function pickMat(el,group){
+  var p=el.closest('.sub-sec');
+  p.querySelectorAll('.mat-btn').forEach(function(b){b.classList.remove('selected');});
+  el.classList.add('selected');
+}
+
+function selInline(el){
+  var p=el.closest('.inline-sel');
+  p.querySelectorAll('.inline-opt').forEach(function(o){o.classList.remove('selected');});
+  el.classList.add('selected');
+}
+
+function selectCOL(col,el){
+  state.col=col;
+  document.querySelectorAll('.cause-item').forEach(function(c){c.classList.remove('selected');});
+  el.classList.add('selected');
+  document.getElementById('colNext').style.display='block';
+  autoSave();
+}
+
+function colSoon(name,el){
+  document.querySelectorAll('.cause-item').forEach(function(c){c.classList.remove('selected');});
+  el.classList.add('selected');
+  state.col=name;
+  document.getElementById('colNext').style.display='block';
+  alert(name+' workflow is in development. Proceeding with Wind/Hail workflow for demonstration.');
+}
+
+function toggleFlood(el){
+  var f=document.getElementById('floodOpts');
+  f.style.display=f.style.display==='none'?'block':'none';
+  el.classList.toggle('selected');
+  document.getElementById('colNext').style.display='block';
+}
+
+function selectFloodType(type,el){
+  document.querySelectorAll('#floodOpts .radio-opt').forEach(function(o){o.classList.remove('selected');});
+  el.classList.add('selected');
+  document.getElementById('nfipSec').style.display=type==='nfip'?'block':'none';
+}
+
+function buildRoofLevels(){
+  var c=document.getElementById('roofLevels');if(!c)return;
+  c.innerHTML='';
+  var lvls=['Main Roof'];
+  if(state.stories==='1.5') lvls=['Upper Roof','Lower Roof'];
+  else if(state.stories==='2') lvls=['Second Story Roof','First Story Roof'];
+  else if(state.stories==='3') lvls=['Third Story Roof','Second Story Roof','First Story Roof'];
+  lvls.forEach(function(lvl,i){
+    var id='rs'+i;
+    var div=document.createElement('div');
+    div.className='roof-sec';
+    div.innerHTML='<div class="roof-sec-hdr" onclick="toggleSec(\''+id+'\')"><h4>'+lvl+' — Slope Documentation</h4><span>▼</span></div><div class="roof-sec-body" id="'+id+'">'+buildSlopeHTML(lvl)+'</div>';
+    c.appendChild(div);
+  });
+}
+
+function buildSlopeHTML(lvl){
+  var dirs=['North','West','South','East'];
+  var safe=lvl.replace(/ /g,'-');
+  var html='<div class="instr-banner instr" style="margin-bottom:10px"><strong>Instructions — '+lvl+'</strong> Start with overview, then document hail test square and/or wind damage.</div>';
+  dirs.forEach(function(d){
+    var k=safe+'-'+d;
+    html+='<div class="sub-sec"><h5>'+lvl+' — '+d+' Slope</h5>';
+    html+='<div class="photo-zone"><span class="photo-zone-label">'+d+' Slope Overview — '+lvl+'</span><button class="photo-btn" onclick="takePhoto(\''+k+'-ov\',\''+d+' Slope Overview\')">📷 Take Photo</button><button class="photo-btn secondary" onclick="uploadPhoto(\''+k+'-ov\',\''+d+' Slope Overview\')">🖼 Upload</button><div class="photo-grid" id="photos-'+k+'-ov"></div></div>';
+    html+='<div class="photo-zone"><span class="photo-zone-label">'+d+' Slope Roof Pitch — '+lvl+'</span><button class="photo-btn" onclick="takePhoto(\''+k+'-pitch\',\''+d+' Slope Pitch\')">📷 Take Photo</button><button class="photo-btn secondary" onclick="uploadPhoto(\''+k+'-pitch\',\''+d+' Slope Pitch\')">🖼 Upload</button><div class="photo-grid" id="photos-'+k+'-pitch"></div></div>';
+    html+='<div class="inline-sel" style="margin:8px 0"><span class="inline-opt" onclick="selInline(this)">Hail Damage</span><span class="inline-opt" onclick="selInline(this)">Wind Damage</span><span class="inline-opt" onclick="selInline(this)">Wind & Hail</span><span class="inline-opt" onclick="selInline(this)">No Damage</span></div>';
+    html+='<div class="photo-zone"><span class="photo-zone-label">Test Square Overview (hail) — '+d+' '+lvl+'</span><button class="photo-btn" onclick="takePhoto(\''+k+'-ts\',\'Test Square Overview\')">📷 Take Photo</button><button class="photo-btn secondary" onclick="uploadPhoto(\''+k+'-ts\',\'Test Square Overview\')">🖼 Upload</button><div class="photo-grid" id="photos-'+k+'-ts"></div></div>';
+    html+='<div class="photo-zone"><span class="photo-zone-label">Test Square Close-up (hail) — '+d+' '+lvl+'</span><button class="photo-btn" onclick="takePhoto(\''+k+'-tsc\',\'Test Square Close-up\')">📷 Take Photo</button><button class="photo-btn secondary" onclick="uploadPhoto(\''+k+'-tsc\',\'Test Square Close-up\')">🖼 Upload</button><div class="photo-grid" id="photos-'+k+'-tsc"></div></div>';
+    html+='<div class="photo-zone"><span class="photo-zone-label">Wind Damage Overview — '+d+' '+lvl+'</span><button class="photo-btn" onclick="takePhoto(\''+k+'-wdmg\',\'Wind Damage Overview\')">📷 Take Photo</button><button class="photo-btn secondary" onclick="uploadPhoto(\''+k+'-wdmg\',\'Wind Damage Overview\')">🖼 Upload</button><div class="photo-grid" id="photos-'+k+'-wdmg"></div></div>';
+    html+='<div class="photo-zone"><span class="photo-zone-label">Wind Damage Close-up — '+d+' '+lvl+'</span><button class="photo-btn" onclick="takePhoto(\''+k+'-wcu\',\'Wind Damage Close-up\')">📷 Take Photo</button><button class="photo-btn secondary" onclick="uploadPhoto(\''+k+'-wcu\',\'Wind Damage Close-up\')">🖼 Upload</button><div class="photo-grid" id="photos-'+k+'-wcu"></div></div>';
+    html+='</div>';
+  });
+  return html;
+}
+
+function toggleSec(id){var el=document.getElementById(id);if(el)el.classList.toggle('open');}
+
+function openElev(dir,name){
+  state.currentElev=dir;
+  document.getElementById('elevTitle').textContent=name+' Elevation';
+  document.getElementById('elevLabel').textContent=name+' Elevation — Overview';
+  document.getElementById('elevOvLabel').textContent=name+' Elevation Overview Photos';
+  document.getElementById('elevModal').classList.add('open');
+  window.scrollTo(0,0);
+}
+
+function closeElev(){document.getElementById('elevModal').classList.remove('open');}
+
+function saveElev(){
+  document.getElementById('elev-'+state.currentElev).classList.add('done');
+  closeElev();
+}
+
+function openRoom(name){
+  state.currentRoom=name;
+  document.getElementById('roomTitle').textContent=name;
+  goTo('s-room');
+}
+
+function toggleRoomDmg(val){document.getElementById('roomDmgSec').style.display=val?'block':'none';}
+
+function setFloor(floor){document.getElementById('floorLabel').textContent=floor;}
+
+function checkFenceCustom(sel){document.getElementById('fenceCustomHt').style.display=sel.value==='custom'?'inline-block':'none';}
+
+function toggle2(key,val){
+  var sec=document.getElementById('sec-'+key);
+  if(sec) sec.style.display=val?'block':'none';
+}
+
+function addLien(){
+  var n=document.querySelectorAll('.lien-card').length+1;
+  var d=document.createElement('div');
+  d.className='lien-card';
+  d.style.marginTop='8px';
+  var k='lien'+n;
+  d.innerHTML='<h5>Lienholder '+n+'</h5><div class="fg"><label class="fl">Lienholder Name</label><input class="fi" placeholder="Bank or lender name" oninput="autoSave()"></div><div class="fg"><label class="fl">Loan Number</label><input class="fi" placeholder="Loan number" oninput="autoSave()"></div><div class="photo-zone"><span class="photo-zone-label">Mortgage / Lien Document</span><button class="photo-btn" onclick="takePhoto(\''+k+'\',\'Lien Document\')">📷 Take Photo</button><button class="photo-btn secondary" onclick="uploadPhoto(\''+k+'\',\'Lien Document\')">🖼 Upload</button><div class="photo-grid" id="photos-'+k+'"></div></div>';
+  document.getElementById('lienList').appendChild(d);
+}
+
+function addCustomVerif(containerId){
+  var name=prompt('Enter verification item name:');
+  if(!name) return;
+  var id='cv-'+Date.now();
+  var div=document.createElement('div');
+  div.className='chk-item';
+  div.innerHTML='<input type="checkbox"><label>'+name+'</label><button class="cam-btn" onclick="verifPhoto(\''+id+'\',\''+name+'\')">📷</button><div class="chk-photos"><div class="photo-grid" id="photos-'+id+'"></div></div>';
+  var c=document.getElementById(containerId);
+  if(c) c.appendChild(div);
+}
+
+function addCustomRoom(){
+  var name=prompt('Enter room name:');
+  if(!name) return;
+  var div=document.createElement('div');
+  div.className='room-item';
+  div.innerHTML='<h5>'+name+'</h5><span class="status">Tap to inspect</span>';
+  div.onclick=function(){openRoom(name);};
+  document.getElementById('roomList').appendChild(div);
+}
+
+function addCustomStruct(){
+  var name=prompt('Enter structure name:');
+  if(!name) return;
+  var div=document.createElement('div');
+  div.className='step-card';
+  div.innerHTML='<div><h3>'+name+'</h3><p>Custom structure</p></div><span class="arrow">›</span>';
+  div.onclick=function(){alert(name+' — custom structure workflow coming in next version.');};
+  document.getElementById('otherStructList').appendChild(div);
+}
+
+function updateSummary(){
+  var f=state.fields;
+  document.getElementById('sum-claim').textContent=f['f-claimNum']||'—';
+  document.getElementById('sum-insured').textContent=f['f-insName']||'—';
+  document.getElementById('sum-addr').textContent=(f['f-addr']||'')+(f['f-city']?', '+f['f-city']:'')+(f['f-state']?' '+f['f-state']:'');
+  document.getElementById('sum-dol').textContent=f['f-dol']||'—';
+  document.getElementById('sum-col').textContent=state.col||'—';
+  document.getElementById('sum-adj').textContent=f['f-adjName']||'—';
+  document.getElementById('sum-date').textContent=new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+  document.getElementById('sum-photos').textContent=photoCount+' photos captured';
+}
+
+function submitFeedback(){
+  var feedback = document.querySelectorAll('.feedback-ta');
+  var body = '';
+  feedback.forEach(function(ta){if(ta.value)body+=ta.value+'\n\n';});
+  window.location.href='mailto:homeoffice@sagllc.com?subject=SAG Field App Feedback — '+new Date().toLocaleDateString()+'&body='+encodeURIComponent(body||'Feedback from field adjuster.');
+}
+
+buildRoofLevels();
+document.getElementById('instrToggle').checked=true;
+document.getElementById('s-claims').addEventListener('click',function(e){});
+var origLoadClaims=loadClaims;
+document.querySelector('[onclick="goTo(\'s-claims\')"]') && document.querySelector('[onclick="goTo(\'s-claims\')"]').addEventListener('click',function(){setTimeout(loadClaims,50);});
+document.querySelectorAll('.screen').forEach(function(s){
+  if(s.id==='s-claims'){
+    var orig=s.onclick;
+    s.addEventListener('transitionend',loadClaims);
+  }
+});
+var claimsBtn=document.querySelector('.btn[onclick*="s-claims"]');
+if(claimsBtn) claimsBtn.addEventListener('click',function(){setTimeout(loadClaims,50);});
+</script>
+</body>
+</html>
