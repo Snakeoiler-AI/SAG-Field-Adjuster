@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -138,8 +138,21 @@ input:checked+.toggle-slider:before{transform:translateX(16px)}
   <div class="header"><h1>SAG Field Adjuster</h1></div>
   <div class="content">
     <div class="splash">
-      <div class="logo">SAG</div>
-      <h2 style="font-size:22px;font-weight:700;color:#1a3a5c;margin-bottom:8px">Field Inspection App</h2>
+      <svg width="160" height="80" viewBox="0 0 160 80" xmlns="http://www.w3.org/2000/svg" style="margin:0 auto 8px;display:block">
+        <!-- S -->
+        <text x="0" y="68" font-family="Arial Black,Arial,sans-serif" font-size="72" font-weight="900" fill="#1a3a5c">S</text>
+        <!-- G -->
+        <text x="98" y="68" font-family="Arial Black,Arial,sans-serif" font-size="72" font-weight="900" fill="#1a3a5c">G</text>
+        <!-- Spire symbol as A -->
+        <polygon points="80,2 68,38 72,38 64,72 80,52 96,72 88,38 92,38" fill="#3a7fc1"/>
+        <polygon points="80,6 78,36 80,30 82,36" fill="#5a9fd4" opacity="0.6"/>
+      </svg>
+      <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:16px">
+        <span style="font-size:11px;color:#888;letter-spacing:0.5px">POWERED BY</span>
+        <span style="font-size:13px;font-weight:700;color:#1a2e4a">Claim</span><span style="font-size:13px;font-weight:700;color:#2d8ef0;margin-left:-4px">Spire</span>
+      </div>
+      <p style="font-size:12px;color:#2980b9;font-weight:600;letter-spacing:1px;margin-bottom:4px">SIGNATURE ADJUSTMENT GROUP</p>
+      <h2 style="font-size:20px;font-weight:700;color:#1a3a5c;margin-bottom:8px">Field Inspection App</h2>
       <p style="font-size:14px;color:#666;line-height:1.6;margin-bottom:24px">Guided workflow for property & casualty field adjusters. All data is saved automatically to your device.</p>
       <button class="btn btn-primary" onclick="newClaim()">+ Start New Inspection</button>
       <button class="btn btn-secondary" style="margin-top:10px" onclick="goTo('s-claims')">Load Saved Claim</button>
